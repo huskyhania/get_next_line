@@ -6,88 +6,85 @@
 /*   By: hskrzypi <hskrzypi@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 19:03:45 by hskrzypi          #+#    #+#             */
-/*   Updated: 2024/05/28 22:25:39 by hskrzypi         ###   ########.fr       */
+/*   Updated: 2024/05/31 15:26:45 by hskrzypi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-#include <stdio.h> 
 
-static void	*freeing(char **ptr)
+static char	*read_line(int fd, char *buffer, char *save)
 {
-	free(*ptr);
-	*ptr = NULL;
-	return (NULL);
-}
+	int		read_check;
+	char	*partial;
 
-char	*read_line(int fd, char *buffer, char *save)
-{
-	int		line_read;
-	char	*line_saved;
-
-	line_read = 1;
-	while (line_read != 0)
+	read_check = 1;
+	while (read_check != 0)
 	{
-		line_read = read(fd, buffer, BUFFER_SIZE);
-		if (line_read == -1)
+		read_check = read(fd, buffer, BUFFER_SIZE);
+		if (read_check == -1)
 			return (freeing(&save));
-		else if (line_read == 0)
-			break ;
-		buffer[line_read] = '\0';
+		else if (read_check == 0)
+			return (save);
+		buffer[read_check] = '\0';
 		if (!save)
-		{
 			save = ft_strdup("");
-			if (!save)
-				return (NULL);
-		}
-		line_saved = save;
-		save = ft_strjoin(line_saved, buffer);
-		freeing(&line_saved);
 		if (!save)
 			return (NULL);
+		partial = save;
+		save = ft_strjoin(partial, buffer);
+		freeing(&partial);
+		if (!save)
+			return (freeing(&save));
 		if (ft_strchr(buffer, '\n'))
-			break ;
+			return (save);
 	}
 	return (save);
 }
 
-char	*get_remaining(char *line)
+static char	*get_remaining(char *save)
 {
 	size_t	index;
 	char	*remaining;
 
 	index = 0;
-	while (line[index] != '\n' && line[index] != '\0')
+	while (save[index] != '\n' && save[index])
 		index++;
-	remaining = ft_substr(line, index + 1, ft_strlen(line) - index);
+	if (save[index] == '\n')
+		index++;
+	if (save[index] == '\0')
+		return (freeing(&save));
+	remaining = ft_strdup(&save[index]);
 	if (!remaining)
-		return (NULL);
-	if (*remaining == '\0')
-		freeing(&remaining);
-	if (ft_strchr(line, '\n'))
-		index++;
-	line[index] = '\0';
+		return (freeing(&save));
+	freeing(&save);
 	return (remaining);
 }
 
-char	*dup_line(char *line)
+static char	*build_line(char *save, char *line)
 {
-	char	*ret;
-	size_t	line_len;
+	int	i;
 
-	line_len = 0;
-	if (ft_strchr(line, '\n'))
-	{
-		line_len = ft_strchr(line, '\n') - line;
-		line_len++;
-	}
-	else
-		line_len = ft_strlen(line);
-	ret = ft_substr(line, 0, line_len);
-	freeing(&line);
-	if (!ret)
+	i = 0;
+	while (save[i] && save[i] != '\n')
+		i++;
+	if (save[i] == '\n')
+		i++;
+	line = malloc((i + 1) * sizeof(char));
+	if (!line)
 		return (NULL);
-	return (ret);
+	i = 0;
+	while (save[i] && save[i] != '\n')
+	{
+		line[i] = save[i];
+		i++;
+	}
+	if (save[i] == '\n')
+	{
+		line[i] = save[i];
+		i++;
+	}
+	line[i] = '\0';
+	return (line);
 }
 
 char	*get_next_line(int fd)
@@ -96,47 +93,23 @@ char	*get_next_line(int fd)
 	char		*buffer;
 	static char	*save;
 
-	if (fd < 0 || BUFFER_SIZE <= 0 || read(fd, &buffer, 0) < 0)
-	{
-		if (save != NULL)
-			freeing(&save);
+	line = NULL;
+	if (fd < 0 || BUFFER_SIZE <= 0)
 		return (NULL);
-	}
 	buffer = (char *)malloc(sizeof(char) * BUFFER_SIZE + 1);
 	if (!buffer)
+	{
+		if (save != NULL)
+			return (freeing(&save));
 		return (NULL);
-	line = read_line(fd, buffer, save);
+	}
+	save = read_line(fd, buffer, save);
 	freeing(&buffer);
+	if (!save)
+		return (NULL);
+	line = build_line(save, line);
 	if (!line)
 		return (freeing(&save));
-	save = get_remaining(line);
-	line = dup_line(line);
-	if (!line)
-		return (freeing(&save));
+	save = get_remaining(save);
 	return (line);
 }
-/*int	main(int argc, char **argv)
-{
-	int fd;
-	char *line;
-	int lines;
-
-	if (argc != 2)
-		return (0);
-//	printf("%d\n", getpid());
-	lines = 1;
-	fd = open(argv[1], O_RDONLY);
-	if (fd == -1)
-	{
-		// printf("error opening the file");
-		return (1);
-	}
-	while ((line = get_next_line(fd)))
-	{
-		printf("line no: %d -> %s\n", lines++, line);
-		free(line);
-	}
-	close(fd);
-	return (0);
-}
-*/

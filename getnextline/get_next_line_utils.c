@@ -6,11 +6,18 @@
 /*   By: hskrzypi <hskrzypi@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/15 20:35:16 by hskrzypi          #+#    #+#             */
-/*   Updated: 2024/05/28 20:00:47 by hskrzypi         ###   ########.fr       */
+/*   Updated: 2024/05/30 20:00:54 by hskrzypi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
+
+char	*freeing(char **ptr)
+{
+	free(*ptr);
+	*ptr = NULL;
+	return (NULL);
+}
 
 size_t	ft_strlen(const char *s)
 {
@@ -20,25 +27,6 @@ size_t	ft_strlen(const char *s)
 	while (s[c] != '\0')
 		c++;
 	return (c);
-}
-
-void	*ft_calloc(size_t count, size_t size)
-{
-	void	*allocated_space;
-	size_t	i;
-
-	i = 0;
-	if (count && UINT_MAX / count < size)
-		return (NULL);
-	allocated_space = malloc(count * size);
-	if (!allocated_space)
-		return (NULL);
-	while (i < count * size)
-	{
-		((unsigned char *)allocated_space)[i] = 0;
-		i++;
-	}
-	return (allocated_space);
 }
 
 char	*ft_strdup(const char *s)
@@ -58,30 +46,6 @@ char	*ft_strdup(const char *s)
 		i++;
 	}
 	str[i] = '\0';
-	return (str);
-}
-
-char	*ft_substr(char const *s, unsigned int start, size_t len)
-{
-	size_t	i;
-	size_t	j;
-	char	*str;
-
-	str = (char *)malloc(sizeof(*s) * (len + 1));
-	if (!str)
-		return (NULL);
-	i = 0;
-	j = 0;
-	while (s[i])
-	{
-		if (i >= start && j < len)
-		{
-			str[j] = s[i];
-			j++;
-		}
-		i++;
-	}
-	str[j] = 0;
 	return (str);
 }
 
